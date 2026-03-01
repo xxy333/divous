@@ -68,6 +68,7 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false
             runAsNonRoot: true
+            runAsUser: 1001
 
 ---
 apiVersion: v1
