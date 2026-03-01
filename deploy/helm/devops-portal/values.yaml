@@ -1,0 +1,33 @@
+image:
+  repository: devops-portal-backend
+  tag: "local"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+env:
+  appBaseUrl: "http://portal.local"
+  postLoginRedirect: "/"
+  oidcIssuer: "http://auth.portal.local/realms/devops-lab"
+  oidcClientId: "portal"
+  oidcRedirectUri: "http://portal.local/callback"
+  oidcRequireAudience: "true"
+  cookieSecure: "false"
+  cookieSameSite: "lax"
+
+secrets:
+  oidcClientSecret: "CHANGE_ME"
+  sessionSecret: "CHANGE_ME_RANDOM_LONG"
+
+service:
+  port: 8000
+
+ingress:
+  enabled: true
+  className: nginx
+  portalHost: portal.local
+  apiHost: portal.local
+  keycloakHost: auth.portal.local
+  # keycloakServiceName will be used later when we add keycloak manifests/chart
+  keycloakServiceName: keycloak
+  keycloakServicePort: 80
