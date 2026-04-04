@@ -12,6 +12,12 @@ spec:
       labels:
         app: portal
     spec:
+      {{- if .Values.keycloakHostAlias.enabled }}
+      hostAliases:
+        - ip: {{ .Values.keycloakHostAlias.ip | quote }}
+          hostnames:
+            - {{ .Values.ingress.keycloakHost | quote }}
+      {{- end }}
       containers:
         - name: portal
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

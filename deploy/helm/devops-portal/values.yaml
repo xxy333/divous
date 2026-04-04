@@ -19,15 +19,16 @@ secrets:
   oidcClientSecret: "CHANGE_ME"
   sessionSecret: "CHANGE_ME_RANDOM_LONG"
 
-service:
+keycloakHostAlias:
+  enabled: true
+  ip: "10.109.239.81"  # ClusterIP of keycloak service
   port: 8000
 
 ingress:
   enabled: true
   className: nginx
-  portalHost: portal.local
-  apiHost: portal.local
-  keycloakHost: auth.portal.local
-  # keycloakServiceName will be used later when we add keycloak manifests/chart
+  portalHost: portal.test       # changed from portal.local
+  apiHost: portal.test          # changed from portal.local
+  keycloakHost: auth.portal.test # changed from auth.portal.local
   keycloakServiceName: keycloak
   keycloakServicePort: 80

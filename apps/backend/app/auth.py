@@ -122,12 +122,11 @@ async def exchange_code_for_tokens(code: str) -> Dict[str, Any]:
         return r.json()
 
 
-async def verify_id_token(id_token: str) -> Dict[str, Any]:
+async def verify_id_token(id_token: str, access_token: Optional[str] = None) -> Dict[str, Any]:
     cfg = await _oidc.load()
     issuer = cfg["issuer"]
 
     jwks = await _oidc.jwks()
-    # jose can select key by kid automatically if you pass jwks as key and set options
     options = {
         "verify_aud": REQUIRE_AUDIENCE,
         "verify_signature": True,
@@ -142,6 +141,7 @@ async def verify_id_token(id_token: str) -> Dict[str, Any]:
             algorithms=["RS256"],
             issuer=issuer,
             audience=OIDC_CLIENT_ID if REQUIRE_AUDIENCE else None,
+            access_token=access_token,
             options=options,
         )
         return claims

@@ -15,6 +15,7 @@ from .auth import (
     require_user,
     require_role,
     _oidc,
+    OIDC_CLIENT_ID,
 )
 
 app = FastAPI(title="DevOps Portal Lite")
@@ -93,10 +94,11 @@ async def callback(code: str, state: str):
 
     tokens = await exchange_code_for_tokens(code)
     id_token = tokens.get("id_token")
+    access_token = tokens.get("access_token")
     if not id_token:
         return JSONResponse({"error": "missing_id_token"}, status_code=400)
 
-    claims = await verify_id_token(id_token)
+    claims = await verify_id_token(id_token, access_token=access_token)
 
     # (Optional) nonce validation - Keycloak includes nonce in id_token
     if claims.get("nonce") != nonce:
@@ -117,7 +119,12 @@ async def callback(code: str, state: str):
 
 @app.post("/logout")
 async def logout():
-    resp = RedirectResponse(url="/")
+    cfg = await _oidc.load()
+    end_session_endpoint = cfg.get("end_session_endpoint")
+    resp = RedirectResponse(
+        url=f"{end_session_endpoint}?post_logout_redirect_uri=http://portal.test/login&client_id={OIDC_CLIENT_ID}",
+        status_code=303,
+    )
     clear_session(resp)
     return resp
 
