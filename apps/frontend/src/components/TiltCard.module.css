@@ -1,0 +1,15 @@
+.glowOverlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Push card content above the glow layer */
+.glowOverlay ~ * {
+  position: relative;
+  z-index: 1;
+}

@@ -1,0 +1,183 @@
+.container {
+  max-width: 960px;
+  margin: 2.5rem auto;
+  padding: 0 1.5rem;
+  animation: fadeIn 0.4s ease;
+}
+
+.title {
+  font-size: 2.1rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  /* Shimmer text */
+  background: linear-gradient(90deg, #e0e4ff 0%, #c084fc 40%, #7b9cff 70%, #e0e4ff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fadeInUp 0.5s ease both, shimmer 5s linear infinite;
+}
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 2rem;
+  font-size: 1.05rem;
+  animation: fadeInUp 0.5s ease 0.1s both;
+}
+
+.subtitle strong {
+  color: rgba(168, 178, 255, 0.9);
+}
+
+.cursor {
+  display: inline-block;
+  color: #7b9cff;
+  font-weight: 300;
+  animation: blink 1s step-end infinite;
+  margin-left: 1px;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Glass card */
+.card {
+  background: rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 0.3s cubic-bezier(.22,.68,0,1.2),
+              box-shadow 0.3s ease,
+              border-color 0.3s ease,
+              background 0.3s ease;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 10px 36px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(123, 156, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.card:hover .cardIcon {
+  transform: scale(1.15) rotate(-5deg);
+  filter: drop-shadow(0 0 12px rgba(192, 132, 252, 0.4));
+}
+
+.card:nth-child(1) { animation-delay: 0.10s; }
+.card:nth-child(2) { animation-delay: 0.20s; }
+.card:nth-child(3) { animation-delay: 0.30s; }
+.card:nth-child(4) { animation-delay: 0.40s; }
+
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cardLink:hover {
+  box-shadow:
+    0 16px 48px rgba(123, 156, 255, 0.25),
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: rgba(123, 156, 255, 0.5);
+  background: rgba(123, 156, 255, 0.1);
+  text-decoration: none;
+}
+
+.cardLink:active {
+  transition: transform 0.1s ease !important;
+}
+
+.cardIcon {
+  font-size: 2rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(123,156,255,0.3));
+  transition: transform 0.3s cubic-bezier(.22,.68,0,1.4), filter 0.3s ease;
+}
+
+.cardLink:hover .cardIcon {
+  transform: scale(1.25) rotate(-8deg);
+  filter: drop-shadow(0 0 14px rgba(192,132,252,0.5));
+}
+
+.cardContent h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.muted {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+}
+
+.roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.badge {
+  background: rgba(123, 156, 255, 0.15);
+  border: 1px solid rgba(123, 156, 255, 0.3);
+  color: #b0c4ff;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+  animation: pulse 3s ease-in-out infinite;
+  transition: transform 0.2s cubic-bezier(.22,.68,0,1.4),
+              background 0.2s ease,
+              box-shadow 0.2s ease;
+  cursor: default;
+}
+
+.badge:hover {
+  transform: scale(1.12) translateY(-2px);
+  background: rgba(123, 156, 255, 0.28);
+  box-shadow: 0 0 14px rgba(123, 156, 255, 0.4);
+  animation: none;
+}
+
+.alert {
+  background: rgba(255, 80, 80, 0.08);
+  border: 1px solid rgba(255, 100, 100, 0.2);
+  color: rgba(255, 150, 150, 0.9);
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  animation: fadeInUp 0.3s ease;
+  backdrop-filter: blur(12px);
+}
+
+.pre {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 1.1rem;
+  font-size: 0.82rem;
+  overflow-x: auto;
+  margin-top: 0.75rem;
+  color: #86efac;
+  line-height: 1.7;
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
