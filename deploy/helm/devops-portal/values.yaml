@@ -18,6 +18,7 @@ env:
 secrets:
   oidcClientSecret: "CHANGE_ME"
   sessionSecret: "CHANGE_ME_RANDOM_LONG"
+  postgresPassword: "keycloak-pg-pass"
 
 keycloakHostAlias:
   enabled: true

@@ -11,11 +11,76 @@ spec:
     - host: {{ .Values.ingress.portalHost | quote }}
       http:
         paths:
-          - path: /
+          # Backend API paths
+          - path: /login
             pathType: Prefix
             backend:
               service:
                 name: portal
+                port:
+                  number: 80
+          - path: /logout
+            pathType: Prefix
+            backend:
+              service:
+                name: portal
+                port:
+                  number: 80
+          - path: /callback
+            pathType: Prefix
+            backend:
+              service:
+                name: portal
+                port:
+                  number: 80
+          - path: /me
+            pathType: Prefix
+            backend:
+              service:
+                name: portal
+                port:
+                  number: 80
+          - path: /dev
+            pathType: Prefix
+            backend:
+              service:
+                name: portal
+                port:
+                  number: 80
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: portal
+                port:
+                  number: 80
+          - path: /healthz
+            pathType: Prefix
+            backend:
+              service:
+                name: portal
+                port:
+                  number: 80
+          - path: /readyz
+            pathType: Prefix
+            backend:
+              service:
+                name: portal
+                port:
+                  number: 80
+          - path: /oidc
+            pathType: Prefix
+            backend:
+              service:
+                name: portal
+                port:
+                  number: 80
+          # Frontend – vše ostatní
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: portal-frontend
                 port:
                   number: 80
     - host: {{ .Values.ingress.keycloakHost | quote }}

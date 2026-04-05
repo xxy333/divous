@@ -1,0 +1,222 @@
+---
+# ConfigMap – realm setup script, spuštěný sidecar kontejnerem po startu Keycloaku
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-setup-script
+data:
+  setup.sh: |
+    #!/bin/sh
+    KC_URL="http://localhost:8080"
+    REALM="devops-lab"
+    CLIENT_ID="portal"
+
+    echo "⏳ Waiting for Keycloak..."
+    until curl -sf "${KC_URL}/realms/master" > /dev/null 2>&1; do
+      sleep 5
+    done
+    echo "✅ Keycloak is ready"
+
+    TOKEN=$(curl -sf -X POST "${KC_URL}/realms/master/protocol/openid-connect/token" \
+      -d "client_id=admin-cli&username=admin&password=admin&grant_type=password" \
+      | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+
+    if [ -z "$TOKEN" ]; then
+      echo "❌ Failed to get admin token" && exit 1
+    fi
+    echo "🔑 Got admin token"
+
+    # Pokud realm už existuje (data v PostgreSQL přežila restart), přeskoč setup
+    REALM_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+      -H "Authorization: Bearer ${TOKEN}" \
+      "${KC_URL}/admin/realms/${REALM}")
+    if [ "$REALM_STATUS" = "200" ]; then
+      echo "ℹ️  Realm '${REALM}' already exists in DB – skipping setup"
+      sleep infinity
+    fi
+    echo "🆕 Fresh database – running full setup"
+
+    curl -s -X POST "${KC_URL}/admin/realms" \
+      -H "Authorization: Bearer ${TOKEN}" \
+      -H "Content-Type: application/json" \
+      -d "{\"realm\":\"${REALM}\",\"enabled\":true,\"displayName\":\"DevOps Lab\"}" || true
+
+    curl -s -X POST "${KC_URL}/admin/realms/${REALM}/clients" \
+      -H "Authorization: Bearer ${TOKEN}" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"clientId\": \"${CLIENT_ID}\",
+        \"enabled\": true,
+        \"publicClient\": false,
+        \"secret\": \"${KC_CLIENT_SECRET}\",
+        \"redirectUris\": [\"http://portal.test/*\"],
+        \"webOrigins\": [\"http://portal.test\"],
+        \"standardFlowEnabled\": true,
+        \"directAccessGrantsEnabled\": false,
+        \"protocol\": \"openid-connect\",
+        \"attributes\": {\"post.logout.redirect.uris\": \"http://portal.test/login\"}
+      }" || true
+
+    CLIENT_UUID=$(curl -sf "${KC_URL}/admin/realms/${REALM}/clients?clientId=${CLIENT_ID}" \
+      -H "Authorization: Bearer ${TOKEN}" \
+      | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+    curl -s -X POST "${KC_URL}/admin/realms/${REALM}/clients/${CLIENT_UUID}/protocol-mappers/models" \
+      -H "Authorization: Bearer ${TOKEN}" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "realm roles",
+        "protocol": "openid-connect",
+        "protocolMapper": "oidc-usermodel-realm-role-mapper",
+        "consentRequired": false,
+        "config": {
+          "multivalued": "true",
+          "userinfo.token.claim": "true",
+          "id.token.claim": "true",
+          "access.token.claim": "true",
+          "claim.name": "realm_access.roles",
+          "jsonType.label": "String"
+        }
+      }' || true
+
+    for role in viewer developer admin; do
+      curl -s -X POST "${KC_URL}/admin/realms/${REALM}/roles" \
+        -H "Authorization: Bearer ${TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "{\"name\":\"${role}\"}" || true
+    done
+    echo "🎭 Roles created"
+
+    create_user() {
+      local username=$1 password=$2 role=$3
+      curl -s -X POST "${KC_URL}/admin/realms/${REALM}/users" \
+        -H "Authorization: Bearer ${TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"username\": \"${username}\",
+          \"enabled\": true,
+          \"emailVerified\": true,
+          \"email\": \"${username}@portal.test\",
+          \"firstName\": \"${username}\",
+          \"lastName\": \"User\",
+          \"credentials\": [{\"type\":\"password\",\"value\":\"${password}\",\"temporary\":false}]
+        }" || true
+
+      USER_ID=$(curl -sf "${KC_URL}/admin/realms/${REALM}/users?username=${username}" \
+        -H "Authorization: Bearer ${TOKEN}" \
+        | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+      ROLE_OBJ=$(curl -sf "${KC_URL}/admin/realms/${REALM}/roles/${role}" \
+        -H "Authorization: Bearer ${TOKEN}")
+
+      curl -s -X POST "${KC_URL}/admin/realms/${REALM}/users/${USER_ID}/role-mappings/realm" \
+        -H "Authorization: Bearer ${TOKEN}" \
+        -H "Content-Type: application/json" \
+        -d "[${ROLE_OBJ}]" || true
+
+      echo "  👤 ${username} (${role})"
+    }
+
+    create_user "alice" "Password123" "admin"
+    create_user "bob"   "Password123" "developer"
+    create_user "carol" "Password123" "viewer"
+
+    echo "✅ Setup complete – realm, client, roles and users configured"
+    sleep infinity
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.1
+          args: ["start-dev"]
+          env:
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_PROXY_HEADERS
+              value: xforwarded
+            - name: KEYCLOAK_ADMIN
+              value: admin
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: admin
+            - name: KC_HOSTNAME
+              value: auth.portal.test
+            - name: KC_DB
+              value: postgres
+            - name: KC_DB_URL
+              value: jdbc:postgresql://postgres:5432/keycloak
+            - name: KC_DB_USERNAME
+              value: keycloak
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: portal-secrets
+                  key: POSTGRES_PASSWORD
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /realms/master
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+
+        # Sidecar: čeká na Keycloak a automaticky nakonfiguruje realm, klienta, role a uživatele
+        - name: keycloak-setup
+          image: alpine:3.19
+          command: ["/bin/sh", "-c", "apk add --no-cache curl -q && sh /scripts/setup.sh"]
+          env:
+            - name: KC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: portal-secrets
+                  key: OIDC_CLIENT_SECRET
+          volumeMounts:
+            - name: setup-script
+              mountPath: /scripts
+
+      volumes:
+        - name: setup-script
+          configMap:
+            name: keycloak-setup-script
+            defaultMode: 0755
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  labels:
+    app: keycloak
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
